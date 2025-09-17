@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>1v1 MOBA – Monster Theme</title>
+  <style>
+    :root { --bg:#0a0f18; --fg:#eaf2ff; --panel:rgba(9,13,20,.65); --shadow:0 8px 24px rgba(0,0,0,.35) }
+    html, body { margin:0; height:100%; background:#090f17; color:var(--fg); font-family:system-ui, Segoe UI, Roboto, Arial; overscroll-behavior:none }
+    #topbar { position:fixed; left:12px; top:12px; z-index:10; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:10px 14px; font-size:14px; box-shadow:var(--shadow); backdrop-filter: blur(6px); }
+    #status { position:fixed; right:12px; top:12px; z-index:10; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:8px 12px; font-size:13px; box-shadow:var(--shadow); backdrop-filter: blur(6px); }
+    #win { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); font-size:42px; font-weight:800; display:none; z-index:9; text-shadow: 0 4px 24px rgba(0,0,0,.6); }
+    #ui { position:fixed; left:50%; transform:translateX(-50%); bottom:12px; display:flex; gap:10px; z-index:10; flex-wrap:wrap; justify-content:center }
+    .btn { background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.18); color:#e5e7eb; padding:10px 12px; border-radius:10px; font-size:13px; cursor:pointer; box-shadow:var(--shadow); }
+    #canvas { display:block; width:100vw; height:100vh; touch-action:none }
+    #minimap { position:fixed; left:14px; top:86px; width:200px; height:120px; background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.15); border-radius:12px; z-index:10; box-shadow:var(--shadow); backdrop-filter: blur(4px); }
+    /* Controls (polished) */
+    #mobile { position:fixed; left:0; bottom:0; width:100%; height:100%; pointer-events:none; z-index:8 }
+    .stick { position:absolute; left:20px; bottom:20px; width:160px; height:160px; pointer-events:auto; border-radius:50%; background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.08), rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.16); box-shadow:var(--shadow) }
+    .stick .ring { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:140px; height:140px; border-radius:50%; border:2px solid rgba(89,170,255,.45); box-shadow: inset 0 0 32px rgba(89,170,255,.15) }
+    .knob { position:absolute; left:50%; top:50%; width:76px; height:76px; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle at 40% 35%, rgba(255,255,255,.7), rgba(255,255,255,.25) 40%, rgba(255,255,255,.08) 60%); border:1px solid rgba(255,255,255,.35); box-shadow: 0 10px 18px rgba(0,0,0,.4), inset 0 0 12px rgba(255,255,255,.25) }
+    .skillpad { position:absolute; right:26px; bottom:26px; display:flex; gap:16px; pointer-events:auto; align-items:flex-end }
+    .cluster { display:flex; flex-direction:column; gap:16px }
+    .skill { position:relative; width:92px; height:92px; border-radius:50%; display:flex; align-items:center; justify-content:center; user-select:none; -webkit-user-select:none; background:radial-gradient(circle at 40% 30%, rgba(255,255,255,.35), rgba(255,255,255,.08) 35%, rgba(255,255,255,.03) 70%); border:1px solid rgba(255,255,255,.24); box-shadow:var(--shadow); font-weight:800; font-size:18px; color:#fff; overflow:hidden }
+    .skill .icon { width:60%; height:60% }
+    .skill.locked { filter:grayscale(.8) brightness(.75) }
+    .skill .wedge { position:absolute; inset:0; pointer-events:none; background:conic-gradient(rgba(0,0,0,.55) var(--deg, 0deg), transparent 0); mask-image: radial-gradient(circle at 50% 50%, transparent 48%, black 49%); -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 48%, black 49%); transition: background .12s linear }
+    .skill .cd { position:absolute; bottom:8px; right:10px; font-size:12px; opacity:.9; text-shadow: 0 2px 6px rgba(0,0,0,.6) }
+    .lock { width:62px; height:62px; border-radius:14px; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#d1fae5; box-shadow:var(--shadow) }
+    .lock.on { outline:2px solid #22c55e; color:#22c55e }
+    .aimLine { position:absolute; pointer-events:none; border-top:3px solid rgba(246,196,83,.95); transform-origin:left center; display:none; filter: drop-shadow(0 0 4px rgba(246,196,83,.8)) }
+  </style>
+</head>
+<body>
+  <div id="topbar">
+    <b>1v1 MOBA – Online (Monster Theme)</b><br/>
+    Monster-style art (original): slime shots, totem towers, horned heroes & goblin creeps. Same controls & online play.
+  </div>
+  <div id="status">Offline</div>
+  <div id="win"></div>
+  <div id="ui">
+    <button class="btn" id="btnHost">Host</button>
+    <input class="btn" id="room" placeholder="room-code" style="width:140px; text-transform:lowercase" />
+    <button class="btn" id="btnJoin">Join</button>
+    <button class="btn" id="btnLocal">Local</button>
+    <button class="btn" id="btnReset">Reset</button>
+    <button class="btn" id="btnWave">Wave</button>
+  </div>
+  <canvas id="canvas"></canvas>
+  <canvas id="minimap"></canvas>
+
+  <div id="mobile">
+    <div id="stick" class="stick">
+      <div class="ring"></div>
+      <div id="knob" class="knob"></div>
+    </div>
+    <div class="skillpad">
+      <div class="cluster">
+        <div id="btnAttack" class="skill">
+          <svg class="icon" viewBox="0 0 24 24" fill="none">
+            <path d="M3 21l7-7M14 10l7-7M11 13l3 3M14 10l-3 3" stroke="white" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <div class="wedge" id="wA"></div><span class="cd" id="cdA"></span>
+        </div>
+      </div>
+      <div class="cluster">
+        <div id="btnQ" class="skill">
+          <svg class="icon" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="6" stroke="white" stroke-width="2"/><path d="M12 6v4l3 3" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <div class="wedge" id="wQ"></div><span class="cd" id="cdQ"></span>
+        </div>
+        <div id="btnE" class="skill">
+          <svg class="icon" viewBox="0 0 24 24" fill="none">
+            <path d="M4 12h10" stroke="white" stroke-width="2" stroke-linecap="round"/><path d="M10 7l5 5-5 5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <div class="wedge" id="wE"></div><span class="cd" id="cdE"></span>
+        </div>
+      </div>
+      <div class="cluster">
+        <div id="btnLock" class="lock">LOCK</div>
+      </div>
+    </div>
+    <div id="aimLine" class="aimLine"></div>
+  </div>
+
+  <script src="./net.js" type="module"></script>
+  <script src="./ui.js" type="module"></script>
+  <script src="./app.js" type="module"></script>
+</body>
+</html>
