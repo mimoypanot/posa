@@ -94,20 +94,22 @@ export class InputMux {
   }
 
   // Cooldown overlay updates from app
-  setCooldowns(rem){ // {A:seconds, Q:seconds, E:seconds}
-    const dur = { A:0.6, Q:6, E:10 }; // defaults; just for % display
-    const cds = { A:rem.A||0, Q:rem.Q||0, E:rem.E||0 };
-    const el = (id)=>document.getElementById(id);
-    const set = (key, seconds)=>{
-      el('cd'+key).textContent = seconds>0 ? seconds.toFixed(1) : '';
-      el('btn'+(key==='A'?'Attack':key)).classList.toggle('locked', seconds>0);
-      const pct = Math.max(0, Math.min(1, seconds / (dur[key]||1)));
-      el('w'+key).style.setProperty('--deg', f'{int(pct*360)}deg');
-      // Also set background directly for better browser support
-      el('w'+key).style.background = `conic-gradient(rgba(0,0,0,.55) ${pct*360}deg, transparent 0)`;
-    };
-    set('A', cds.A); set('Q', cds.Q); set('E', cds.E);
-  }
+setCooldowns(rem){ // {A:seconds, Q:seconds, E:seconds}
+  const dur = { A:0.6, Q:6, E:10 }; // defaults; just for % display
+  const cds = { A:rem.A||0, Q:rem.Q||0, E:rem.E||0 };
+  const el = (id)=>document.getElementById(id);
+  const set = (key, seconds)=>{
+    el('cd'+key).textContent = seconds>0 ? seconds.toFixed(1) : '';
+    el('btn'+(key==='A'?'Attack':key)).classList.toggle('locked', seconds>0);
+    const pct = Math.max(0, Math.min(1, seconds / (dur[key]||1)));
+    // instead of f-string, use plain JS template literal:
+    el('w'+key).style.setProperty('--deg', `${pct*360}deg`);
+    el('w'+key).style.background =
+      `conic-gradient(rgba(0,0,0,.55) ${pct*360}deg, transparent 0)`;
+  };
+  set('A', cds.A); set('Q', cds.Q); set('E', cds.E);
+}
+
 
   update(){
     // Keyboard fallback
