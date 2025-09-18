@@ -13,11 +13,14 @@ export async function initFirebase(config){
 }
 
 export class Net {
-  constructor(){
-    this.pc = null; this.channel = null; this.role='none'; this.room=null;
-    this.onOpen=()=>{}; this.onClose=()=>{}; this.onMessage=(_)=>{};
-    this.fns=null;
+  constructor() {
+    this.local = true; // Local mode by default
   }
+  host(room) { this.local=true; console.log("Hosting local", room); }
+  join(room) { this.local=true; console.log("Joining local", room); }
+  send(data) {}
+  onMessage(fn) {}
+}
   async _pc(){
     this.pc = new RTCPeerConnection({ iceServers:[{urls:['stun:stun.l.google.com:19302']}] });
     this.pc.onconnectionstatechange = () => {
